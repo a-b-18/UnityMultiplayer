@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -10,7 +12,13 @@ using UnityEngine.Networking;
 public class ApiHandler : MonoBehaviour
 {
 
-    [SerializeField] private TMP_Text tmpText;
+    [SerializeField] private TMP_Text idResult;
+    [SerializeField] private TMP_Text userNameResult;
+    [SerializeField] private TMP_Text posXResult;
+    [SerializeField] private TMP_Text posYResult;
+    [SerializeField] private TMP_Text angleResult;
+    [SerializeField] private TMP_Text healthResult;
+    [SerializeField] private TMP_Text scoreResult;
     
     public void SetText() {
         StartCoroutine(MakeRequests());
@@ -23,7 +31,13 @@ public class ApiHandler : MonoBehaviour
         yield return httpRequest.SendWebRequest();
         var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
 
-        tmpText.text = responseFromJson.userName;
+        idResult.text = responseFromJson.id.ToString();
+        userNameResult.text = responseFromJson.userName;
+        posXResult.text = responseFromJson.posX.ToString(CultureInfo.InvariantCulture);
+        posYResult.text = responseFromJson.posY.ToString(CultureInfo.InvariantCulture);
+        angleResult.text = responseFromJson.angle.ToString(CultureInfo.InvariantCulture);
+        healthResult.text = responseFromJson.health.ToString();
+        scoreResult.text = responseFromJson.score.ToString();
         
     }
 
