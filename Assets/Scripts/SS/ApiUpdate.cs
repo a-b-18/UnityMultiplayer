@@ -7,54 +7,60 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Serialization;
 
 
-public class ApiHandler : MonoBehaviour
+public class ApiUpdate : MonoBehaviour
 {
-
+    // [SerializeField] private GameObject playerPrefab;
+    
     [SerializeField] private TMP_InputField idResult;
-    [SerializeField] private TMP_InputField userNameResult;
-    [SerializeField] private TMP_InputField posXResult;
-    [SerializeField] private TMP_InputField posYResult;
-    [SerializeField] private TMP_InputField angleResult;
+    [SerializeField] private TMP_Text userNameResult;
+    [SerializeField] private RectTransform playerSprite;
     [SerializeField] private TMP_InputField healthResult;
     [SerializeField] private TMP_InputField scoreResult;
 
     private string apiUrl = "http://192.168.1.201:7265/Player";
-    
-    public void ReadPlayer() {
-        StartCoroutine(ReadRequests(apiUrl));
+
+    public void PullOnlinePlayer(GameObject playerPrefab) {
+        StartCoroutine(PullPlayer(playerPrefab));
     }
     
-    public void WritePlayer() {
-        StartCoroutine(WriteRequests(apiUrl));
+    public void PushUserPlayer(GameObject playerPrefab) {
+        StartCoroutine(PushPlayer(playerPrefab));
     }
 
-    private IEnumerator ReadRequests(string apiUrl) 
+    private IEnumerator PullPlayer(GameObject playerPrefab) 
     {
         // GET request for weather data
         var httpRequest = NewRequest(apiUrl + "?id=" + idResult.text, RequestType.GET);
         yield return httpRequest.SendWebRequest();
         var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
 
+        Vector3 playerPos = playerSprite.forward;
+        
+        string xVal = playerPos.x.ToString();
+        string yVal = playerPos.y.ToString();
+        string angleVal = playerSprite.pivot.y.ToString();
+        
         idResult.text = responseFromJson.id;
         userNameResult.text = responseFromJson.userName;
-        posXResult.text = responseFromJson.posX;
-        posYResult.text = responseFromJson.posY;
-        angleResult.text = responseFromJson.angle;
+        xVal = responseFromJson.posX;
+        yVal = responseFromJson.posY;
+        angleVal = responseFromJson.angle;
         healthResult.text = responseFromJson.health;
         scoreResult.text = responseFromJson.score;
     }
 
-    private IEnumerator WriteRequests(string apiUrl)
+    private IEnumerator PushPlayer(GameObject playerPrefab)
     {
         var requestBody = new PlayerStatus()
         {
             id = idResult.text,
             userName = userNameResult.text,
-            posX = posXResult.text,
-            posY = posYResult.text,
-            angle = angleResult.text,
+            posX = playerSprite.forward.x.ToString(),
+            posY = playerSprite.forward.y.ToString(),
+            angle = playerSprite.pivot.y.ToString(),
             health = healthResult.text,
             score = scoreResult.text
         };
@@ -62,7 +68,6 @@ public class ApiHandler : MonoBehaviour
     // PUT request for player data
         var httpRequest = NewRequest(apiUrl + "?id=" + idResult.text, RequestType.PUT, requestBody);
         yield return httpRequest.SendWebRequest();
-        var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
     }
 
     private UnityWebRequest NewRequest(string path, RequestType type, object data = null) 
@@ -98,16 +103,3 @@ public class PlayerStatus
     public string health;
     public string score;
 }
-
-
-/*
-[Serializable]
-public class PlayerId {
-    public string id;
-}
-*/
-
-// public class PostResult
-// {
-//     public string success { get; set; }
-// }

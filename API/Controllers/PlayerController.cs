@@ -23,18 +23,12 @@ public class PlayerController : ControllerBase
         var playerStatus = await _dataContext.PlayerStatuses.FirstAsync(i => i.Id == id);
 
         return playerStatus;
-        
     }
     [HttpPut(Name = "WriteStatus")]
     public async Task<Boolean> WritePlayerStatus(PlayerStatus playerStatus)
     {
-        // var returnStatus2 = await _dataContext.PlayerStatuses
-        //     .Where(x => x.Id == playerStatus.Id)
-        //     .SingleOrDefaultAsync();
-        
         var returnStatus = _dataContext.PlayerStatuses.Update(playerStatus);
         
         return await _dataContext.SaveChangesAsync() > 0;
-
     }
 }
