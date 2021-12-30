@@ -11,7 +11,7 @@ public class PlayerHandler : MonoBehaviour
 
     private bool userConnected = false;
     private GameObject opcInstance;
-    private GameObject[] opcInstances;
+    private List<GameObject> opcInstances = new List<GameObject>();
 
     // Start is called before the first frame update
     void Start()
@@ -58,7 +58,9 @@ public class PlayerHandler : MonoBehaviour
     {
         opcInstance = Instantiate(opcPlayerPrefab, new Vector3(x: Random.value * 1400 - 700, y: Random.value * 2800 - 1400, z: 0), Quaternion.identity);
         opcInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-        opcInstances[opcInstances.Length + 1] = opcInstance;
+        opcInstances.Add(opcInstance);
+        // if (opcInstances == null) {opcInstances = new GameObject[] {opcInstance};}
+        // else {opcInstances[opcInstances.Length] = opcInstance;}
     }
     
     private void DestroyOpcPlayers()
@@ -66,6 +68,7 @@ public class PlayerHandler : MonoBehaviour
         foreach (var opcItem in opcInstances)
         {
             Destroy(opcItem);
+            opcInstances.Remove(opcItem);
         }
     }
 }
