@@ -17,9 +17,9 @@ public class PlayerController : ControllerBase
     }
 
     [HttpGet(Name = "GetStatus")]
-    public async Task<PlayerStatus> GetPlayerStatus()
+    public async Task<PlayerStatus> GetPlayerStatus(int id)
     {
-        var playerStatus = await _dataContext.PlayerStatuses.FirstAsync();
+        var playerStatus = await _dataContext.PlayerStatuses.FirstAsync(i => i.Id == id);
 
         return playerStatus;
         

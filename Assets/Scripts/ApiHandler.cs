@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 public class ApiHandler : MonoBehaviour
 {
 
-    [SerializeField] private TMP_Text idResult;
+    [SerializeField] private TMP_InputField idResult;
     [SerializeField] private TMP_Text userNameResult;
     [SerializeField] private TMP_Text posXResult;
     [SerializeField] private TMP_Text posYResult;
@@ -20,14 +20,15 @@ public class ApiHandler : MonoBehaviour
     [SerializeField] private TMP_Text healthResult;
     [SerializeField] private TMP_Text scoreResult;
     
-    public void SetText() {
+    public void ReadPlayer() {
         StartCoroutine(MakeRequests());
     }
 
     private IEnumerator MakeRequests() 
     {
         // GET request for weather data
-        var httpRequest = NewRequest("https://localhost:7265/Player", RequestType.GET);
+        // var httpBody = new PlayerId(){id = idResult.text};
+        var httpRequest = NewRequest("http://192.168.1.201:7265/Player?id=" + idResult.text, RequestType.GET);
         yield return httpRequest.SendWebRequest();
         var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
 
@@ -76,11 +77,12 @@ public class PlayerStatus
 }
 
 
-// [Serializable]
-// public class PostData {
-//     public string Hero;
-//     public int PowerLevel;
-// }
+/*
+[Serializable]
+public class PlayerId {
+    public string id;
+}
+*/
 
 // public class PostResult
 // {
