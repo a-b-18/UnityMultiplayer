@@ -19,11 +19,11 @@ public class ApiHandler : MonoBehaviour
     private IEnumerator MakeRequests() 
     {
         // GET request for weather data
-        var httpRequest = NewRequest("https://localhost:7265/WeatherForecast", RequestType.GET);
+        var httpRequest = NewRequest("https://localhost:7265/Player", RequestType.GET);
         yield return httpRequest.SendWebRequest();
-        var responseFromJson = JsonUtility.FromJson<WeatherForecast>(httpRequest.downloadHandler.text);
+        var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
 
-        tmpText.text = responseFromJson.summary;
+        tmpText.text = responseFromJson.userName;
         
     }
 
@@ -50,12 +50,15 @@ public enum RequestType
     PUT = 2
 }
 
-public class WeatherForecast
+public class PlayerStatus
 {
-    public DateTime date;
-    public int temperatureC;
-    public int temperatureF;
-    public string summary;
+    public int id;
+    public string userName;
+    public double posX;
+    public double posY;
+    public double angle;
+    public int health;
+    public int score;
 }
 
 
