@@ -13,33 +13,56 @@ public class ApiHandler : MonoBehaviour
 {
 
     [SerializeField] private TMP_InputField idResult;
-    [SerializeField] private TMP_Text userNameResult;
-    [SerializeField] private TMP_Text posXResult;
-    [SerializeField] private TMP_Text posYResult;
-    [SerializeField] private TMP_Text angleResult;
-    [SerializeField] private TMP_Text healthResult;
-    [SerializeField] private TMP_Text scoreResult;
+    [SerializeField] private TMP_InputField userNameResult;
+    [SerializeField] private TMP_InputField posXResult;
+    [SerializeField] private TMP_InputField posYResult;
+    [SerializeField] private TMP_InputField angleResult;
+    [SerializeField] private TMP_InputField healthResult;
+    [SerializeField] private TMP_InputField scoreResult;
+
+    private string apiUrl = "http://192.168.1.201:7265/Player";
     
     public void ReadPlayer() {
-        StartCoroutine(MakeRequests());
+        StartCoroutine(ReadRequests(apiUrl));
+    }
+    
+    public void WritePlayer() {
+        StartCoroutine(WriteRequests(apiUrl));
     }
 
-    private IEnumerator MakeRequests() 
+    private IEnumerator ReadRequests(string apiUrl) 
     {
         // GET request for weather data
-        // var httpBody = new PlayerId(){id = idResult.text};
-        var httpRequest = NewRequest("http://192.168.1.201:7265/Player?id=" + idResult.text, RequestType.GET);
+        var httpRequest = NewRequest(apiUrl + "?id=" + idResult.text, RequestType.GET);
         yield return httpRequest.SendWebRequest();
         var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
 
-        idResult.text = responseFromJson.id.ToString();
+        idResult.text = responseFromJson.id;
         userNameResult.text = responseFromJson.userName;
-        posXResult.text = responseFromJson.posX.ToString(CultureInfo.InvariantCulture);
-        posYResult.text = responseFromJson.posY.ToString(CultureInfo.InvariantCulture);
-        angleResult.text = responseFromJson.angle.ToString(CultureInfo.InvariantCulture);
-        healthResult.text = responseFromJson.health.ToString();
-        scoreResult.text = responseFromJson.score.ToString();
-        
+        posXResult.text = responseFromJson.posX;
+        posYResult.text = responseFromJson.posY;
+        angleResult.text = responseFromJson.angle;
+        healthResult.text = responseFromJson.health;
+        scoreResult.text = responseFromJson.score;
+    }
+
+    private IEnumerator WriteRequests(string apiUrl)
+    {
+        var requestBody = new PlayerStatus()
+        {
+            id = idResult.text,
+            userName = userNameResult.text,
+            posX = posXResult.text,
+            posY = posYResult.text,
+            angle = angleResult.text,
+            health = healthResult.text,
+            score = scoreResult.text
+        };
+
+    // PUT request for player data
+        var httpRequest = NewRequest(apiUrl + "?id=" + idResult.text, RequestType.PUT, requestBody);
+        yield return httpRequest.SendWebRequest();
+        var responseFromJson = JsonUtility.FromJson<PlayerStatus>(httpRequest.downloadHandler.text);
     }
 
     private UnityWebRequest NewRequest(string path, RequestType type, object data = null) 
@@ -67,13 +90,13 @@ public enum RequestType
 
 public class PlayerStatus
 {
-    public int id;
+    public string id;
     public string userName;
-    public double posX;
-    public double posY;
-    public double angle;
-    public int health;
-    public int score;
+    public string posX;
+    public string posY;
+    public string angle;
+    public string health;
+    public string score;
 }
 
 
