@@ -1,5 +1,7 @@
+using API.Data;
 using API.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
@@ -7,18 +9,19 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class PlayerController : ControllerBase
 {
-    [HttpGet(Name = "GetStatus")]
-    public PlayerStatus GetPlayerStatus()
+    private readonly DataContext _dataContext;
+
+    public PlayerController(DataContext dataContext)
     {
-        return new PlayerStatus()
-            {
-                Id = 1,
-                UserName = "Alex",
-                PosX = 12.3,
-                PosY = 11.7,
-                Angle = 30.2,
-                Health = 88,
-                Score = 100
-            };
+        _dataContext = dataContext;
+    }
+
+    [HttpGet(Name = "GetStatus")]
+    public async Task<PlayerStatus> GetPlayerStatus()
+    {
+        var playerStatus = await _dataContext.PlayerStatuses.FirstAsync();
+
+        return playerStatus;
+        
     }
 }
