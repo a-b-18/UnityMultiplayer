@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -9,20 +10,21 @@ public class PlayerHandler : MonoBehaviour
 {
     [SerializeField] private GameObject userPlayerPrefab;
     [SerializeField] private GameObject opcPlayerPrefab;
-
+    [SerializeField] public TMP_InputField UserInput;
+    
     private bool userConnected = false;
-    private bool opcRespawn = true;
+    private bool userPlaying = false;
+    private bool playersSpawned = true;
+    private int userId = 4;
     private GameObject userInstance;
-    private GameObject opcInstance;
     private GameObject apiHandler;
-    private List<GameObject> opcInstances = new List<GameObject>();
-    private List<PlayerStatus> opcStatuses = new List<PlayerStatus>();
+    private List<GameObject> playerInstances = new List<GameObject>();
+    private List<PlayerStatus> playerStatuses = new List<PlayerStatus>();
     
 
     // Start is called before the first frame update
     void Start()
     {
-        SpawnUserPlayer();
         apiHandler = GameObject.FindGameObjectWithTag("API Handler");
     }
 
@@ -32,59 +34,85 @@ public class PlayerHandler : MonoBehaviour
         switch (userConnected)
         {
             case true:
-                PushUserPlayer();
-                if (opcRespawn)
+                if (!playersSpawned)
                 {
-                    SpawnOpcPlayers(); 
-                    opcRespawn = false;
+                    // for testing user id
+                    userId = int.Parse(UserInput.text);
+                    
+                    playersSpawned = SpawnPlayers();
+                } else {
+                    PushUserPlayer();
                 }
                 break;
             case false:
                 DestroyOpcPlayers();
-                opcRespawn = true;
+                playersSpawned = false;
                 break;
         }
     }
 
     private void PushUserPlayer()
     {
-        apiHandler.transform.GetComponent<ApiHandler>().PushUserPlayer(userInstance);
+        var userTransform = userInstance.transform;
+        var userPosition = userTransform.localPosition;
+        
+        var userStatus = new PlayerStatus()
+        {
+            id = 4.ToString(),
+            userName = "alex",
+            posX = userPosition.ToString(),
+            posY = userPosition.y.ToString(),
+            angle = userTransform.localRotation.y.ToString(),
+            health = "100",
+            score = "787"
+        };
+        apiHandler.transform.GetComponent<ApiHandler>().PushUserPlayer(userStatus);
     }
 
-    private void SpawnUserPlayer()
-    {
-        userInstance = Instantiate(userPlayerPrefab, userPlayerPrefab.transform.position, Quaternion.identity);
-        userInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-    }
-    
     public void SimulateUserConnect()
     {
         userConnected = true;
     }
-    
+
     public void SimulateUserDisconnect()
     {
         userConnected = false;
     }
     
-    private void SpawnOpcPlayers()
+    private bool SpawnPlayers()
     {
-        opcStatuses = apiHandler.transform.GetComponent<ApiHandler>().PullOnlinePlayers();
+        GameObject currentInstance;
+        playerStatuses = new List<PlayerStatus>();
+        playerStatuses = apiHandler.transform.GetComponent<ApiHandler>().PullOnlinePlayers();
         
-        foreach (var opcStatus in opcStatuses)
+        if (playerStatuses.Count == 0) {return false;}
+        
+        foreach (var opcStatus in playerStatuses)
         {
-            opcInstance = Instantiate(opcPlayerPrefab, new Vector3(x: float.Parse(opcStatus.posX), y: float.Parse(opcStatus.posY), z: 0), Quaternion.identity);
-            opcInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-            opcInstances.Add(opcInstance);
+            
+            GameObject playerPrefab = opcPlayerPrefab;
+            if (opcStatus.id == userId.ToString())
+            {
+                currentInstance = Instantiate(userPlayerPrefab, new Vector3(x: float.Parse(opcStatus.posX), y: float.Parse(opcStatus.posY), z: 0), Quaternion.identity);
+                userInstance = currentInstance;
+            }
+            else
+            {
+                currentInstance = Instantiate(opcPlayerPrefab, new Vector3(x: float.Parse(opcStatus.posX), y: float.Parse(opcStatus.posY), z: 0), Quaternion.identity);
+            }
+            currentInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
+            playerInstances.Add(currentInstance);
         }
+
+        return true;
     }
 
     private void DestroyOpcPlayers()
     {
-        foreach (var opcItem in opcInstances)
+        foreach (var opcItem in playerInstances)
         {
             Destroy(opcItem);
-            opcInstances.Remove(opcItem);
+            playerInstances.Remove(opcItem);
         }
     }
 }

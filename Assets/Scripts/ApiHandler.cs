@@ -23,7 +23,7 @@ public class ApiHandler : MonoBehaviour
         // PullOnlinePlayers();
     }
 
-    public void PushUserPlayer(GameObject userPlayer) {
+    public void PushUserPlayer(PlayerStatus userPlayer) {
         StartCoroutine(PushUser(userPlayer));
     }
 
@@ -39,24 +39,10 @@ public class ApiHandler : MonoBehaviour
         return opcStatusList;
     }
 
-    private IEnumerator PushUser(GameObject userPlayer)
+    private IEnumerator PushUser(PlayerStatus userPlayer)
     {
-        var userTransform = userPlayer.transform;
-        var userLocalPosition = userPlayer.transform.localPosition;
-        
-        userStatus = new PlayerStatus()
-        {
-            id = 4.ToString(),
-            userName = "alex",
-            posX = userLocalPosition.x.ToString(),
-            posY = userLocalPosition.y.ToString(),
-            angle = userTransform.localRotation.y.ToString(),
-            health = "100",
-            score = "787"
-        };
-
         // PUT request for player data
-        var httpRequest = NewRequest(apiUrl + "?id=" + "4", RequestType.PUT, userStatus);
+        var httpRequest = NewRequest(apiUrl + "?id=" + "4", RequestType.PUT, userPlayer);
         yield return httpRequest.SendWebRequest();
     }
 
