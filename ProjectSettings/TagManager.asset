@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Game Canvas
+  - User Player
+  - API Handler
   layers:
   - Default
   - TransparentFX

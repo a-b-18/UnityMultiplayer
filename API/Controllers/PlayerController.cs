@@ -17,13 +17,22 @@ public class PlayerController : ControllerBase
         _dataContext = dataContext;
     }
 
-    [HttpGet(Name = "ReadStatus")]
+    [HttpGet("Single", Name = "ReadStatus")]
     public async Task<PlayerStatus> GetPlayerStatus(int id)
     {
         var playerStatus = await _dataContext.PlayerStatuses.FirstAsync(i => i.Id == id);
 
         return playerStatus;
     }
+    
+    [HttpGet("List", Name = "ReadStatuses")]
+    public async Task<PlayerStatus[]> GetPlayerStatuses()
+    {
+        var playerStatus = await _dataContext.PlayerStatuses.ToArrayAsync();
+
+        return playerStatus;
+    }
+    
     [HttpPut(Name = "WriteStatus")]
     public async Task<Boolean> WritePlayerStatus(PlayerStatus playerStatus)
     {

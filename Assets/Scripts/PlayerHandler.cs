@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -10,40 +11,52 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private GameObject opcPlayerPrefab;
 
     private bool userConnected = false;
+    private bool opcRespawn = true;
+    private GameObject userInstance;
     private GameObject opcInstance;
+    private GameObject apiHandler;
     private List<GameObject> opcInstances = new List<GameObject>();
+    private List<PlayerStatus> opcStatuses = new List<PlayerStatus>();
+    
 
     // Start is called before the first frame update
     void Start()
     {
         SpawnUserPlayer();
+        apiHandler = GameObject.FindGameObjectWithTag("API Handler");
     }
 
     // Update is called once per frame
     void Update()
     {
-        CheckUserConnection();
-    }
-
-    private void SpawnUserPlayer()
-    {
-        GameObject userInstance = Instantiate(userPlayerPrefab, userPlayerPrefab.transform.position, Quaternion.identity);
-        userInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-    }
-    
-    private void CheckUserConnection()
-    {
         switch (userConnected)
         {
             case true:
-                SpawnOpcPlayers();
+                PushUserPlayer();
+                if (opcRespawn)
+                {
+                    SpawnOpcPlayers(); 
+                    opcRespawn = false;
+                }
                 break;
             case false:
                 DestroyOpcPlayers();
+                opcRespawn = true;
                 break;
         }
     }
 
+    private void PushUserPlayer()
+    {
+        apiHandler.transform.GetComponent<ApiHandler>().PushUserPlayer(userInstance);
+    }
+
+    private void SpawnUserPlayer()
+    {
+        userInstance = Instantiate(userPlayerPrefab, userPlayerPrefab.transform.position, Quaternion.identity);
+        userInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
+    }
+    
     public void SimulateUserConnect()
     {
         userConnected = true;
@@ -56,13 +69,16 @@ public class PlayerHandler : MonoBehaviour
     
     private void SpawnOpcPlayers()
     {
-        opcInstance = Instantiate(opcPlayerPrefab, new Vector3(x: Random.value * 1400 - 700, y: Random.value * 2800 - 1400, z: 0), Quaternion.identity);
-        opcInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-        opcInstances.Add(opcInstance);
-        // if (opcInstances == null) {opcInstances = new GameObject[] {opcInstance};}
-        // else {opcInstances[opcInstances.Length] = opcInstance;}
+        opcStatuses = apiHandler.transform.GetComponent<ApiHandler>().PullOnlinePlayers();
+        
+        foreach (var opcStatus in opcStatuses)
+        {
+            opcInstance = Instantiate(opcPlayerPrefab, new Vector3(x: float.Parse(opcStatus.posX), y: float.Parse(opcStatus.posY), z: 0), Quaternion.identity);
+            opcInstance.transform.SetParent (GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
+            opcInstances.Add(opcInstance);
+        }
     }
-    
+
     private void DestroyOpcPlayers()
     {
         foreach (var opcItem in opcInstances)
