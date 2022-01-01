@@ -13,37 +13,41 @@ using UnityEngine.Serialization;
 
 public class ApiHandler : MonoBehaviour
 {
-    private string apiUrl = "http://192.168.1.201:7265/Player";
+    private string apiUrl = "http://192.168.1.201:7265/Players";
 
-    private PlayerStatus userStatus = new PlayerStatus();
-    private List<PlayerStatus> opcStatusList = new List<PlayerStatus>();
-
-    private void Update()
-    {
-        // PullOnlinePlayers();
+    private PlayerStatus userPlayer = new PlayerStatus();
+    private List<PlayerStatus> onlinePlayers = new List<PlayerStatus>();
+    
+    public void PushUserPlayer(string userId) {
+        // GET response for opc players to spawn players
+        var httpRequest = NewRequest(apiUrl + "/User?userId=" + userId, RequestType.GET);
+        
+        //Execute asynchronous request
+        StartCoroutine(Init_PushUserPlayer(httpRequest));
     }
 
-    public void PushUserPlayer(PlayerStatus userPlayer) {
-        StartCoroutine(PushUser(userPlayer));
-    }
-
-    public List<PlayerStatus> PullOnlinePlayers() 
+    public PlayerStatus PullUserPlayer(string userId) 
     {
         // GET response for opc players to spawn players
-        var httpRequest = NewRequest(apiUrl + "/List", RequestType.GET);
+        var httpRequest = NewRequest(apiUrl + "/User?userId=" + userId, RequestType.GET);
 
-        StartCoroutine(LoadHttpResponse(httpRequest));
-        // httpRequest.SendWebRequest();
-        
-        // opcStatusList = JsonUtility.FromJson<List<PlayerStatus>>(httpRequest.downloadHandler.text);
-        return opcStatusList;
+        //Execute asynchronous request
+        StartCoroutine(Init_PullUserPlayer(httpRequest));
+
+        // onlinePlayers = JsonUtility.FromJson<List<PlayerStatus>>(httpRequest.downloadHandler.text);
+        return userPlayer;
     }
-
-    private IEnumerator PushUser(PlayerStatus userPlayer)
+    
+    public List<PlayerStatus> PullOnlinePlayers(string userId) 
     {
-        // PUT request for player data
-        var httpRequest = NewRequest(apiUrl + "?id=" + "4", RequestType.PUT, userPlayer);
-        yield return httpRequest.SendWebRequest();
+        // GET response for opc players to spawn players
+        var httpRequest = NewRequest(apiUrl + "/Online?userId=" + userId, RequestType.GET);
+
+        //Execute asynchronous request
+        StartCoroutine(Init_PullOnlinePlayers(httpRequest));
+
+        // onlinePlayers = JsonUtility.FromJson<List<PlayerStatus>>(httpRequest.downloadHandler.text);
+        return onlinePlayers;
     }
 
     private UnityWebRequest NewRequest(string path, RequestType type, object data = null) 
@@ -60,8 +64,24 @@ public class ApiHandler : MonoBehaviour
 
         return request;
     }
+    private IEnumerator Init_PullUserPlayer(UnityWebRequest request)
+    {
+        // yield to wait for the request to return
+        yield return request.SendWebRequest();
+
+        // after this, you will have a result
+        string result = request.downloadHandler.text;
+        
+        // update user 
+        userPlayer = JsonUtility.FromJson<PlayerStatus>(result);
+    }
     
-    public IEnumerator LoadHttpResponse(UnityWebRequest request)
+    private static IEnumerator Init_PushUserPlayer(UnityWebRequest request)
+    {
+        yield return request.SendWebRequest();
+    }
+    
+    private IEnumerator Init_PullOnlinePlayers(UnityWebRequest request)
     {
         // yield to wait for the request to return
         yield return request.SendWebRequest();
@@ -69,38 +89,36 @@ public class ApiHandler : MonoBehaviour
         // after this, you will have a result
         string result = request.downloadHandler.text;
 
-        if (result[0] == '[')
+        try
         {
-            // treat result as opcStatusList
-            RefreshOpcStatusList(request.downloadHandler.text);
-        }
-        else if (result[0] == '{')
-        {
-            // treat result as json
+            // reset onlinePlayers
+            onlinePlayers = new List<PlayerStatus>();
             
-        }
-        else
+            if (result[0] == '[')
+            {
+                // format response ready for splitting 
+                result = result.Replace("[{", "").Replace("}]", "").Replace("},{", "[");
+        
+                // update onlinePlayers for each entry returned
+                foreach (var playerSubString in result.Split('['))
+                {
+                    onlinePlayers.Add(JsonUtility.FromJson<PlayerStatus>("{" + playerSubString + "}"));
+                }
+            }
+            else if (result[0] == '{')
+            {
+                // treat result as json
+            
+            } else {
+                // treat result as error
+                Debug.LogError("Invalid JSON response from server.");
+            }
+        } catch (IndexOutOfRangeException)
         {
             // treat result as error
             Debug.LogError("Invalid JSON response from server.");
         }
     }
-
-    private void RefreshOpcStatusList(string response)
-    {
-        // reset opcStatusList
-        opcStatusList = new List<PlayerStatus>();
-        
-        // format response ready for splitting 
-        response = response.Replace("[{", "").Replace("}]", "").Replace("},{", "[");
-        
-        // update opcStatusList for each entry returned
-        foreach (var playerSubString in response.Split('['))
-        {
-            opcStatusList.Add(JsonUtility.FromJson<PlayerStatus>("{" + playerSubString + "}"));
-        }
-    }
-    
 }
 
 public enum RequestType 
