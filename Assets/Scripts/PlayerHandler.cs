@@ -97,13 +97,16 @@ public class PlayerHandler : MonoBehaviour
         {
             id = userId,
             userName = "alex",
-            posX = userPosition.ToString(),
+            posX = userPosition.x.ToString(),
             posY = userPosition.y.ToString(),
             angle = userTransform.localRotation.y.ToString(),
             health = "100",
             score = "787"
         };
-        apiHandler.transform.GetComponent<ApiHandler>().PushUserPlayer(userId);
+        
+        var success = apiHandler.transform.GetComponent<ApiHandler>().PushUserPlayer(userStatus);
+        
+        if (!success) {Debug.Log($"Error pushing user {userId} to API.");}
     }
     
     private bool PullOnlinePlayers()

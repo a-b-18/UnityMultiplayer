@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Serialization;
@@ -15,42 +16,46 @@ public class ApiHandler : MonoBehaviour
 {
     private string apiUrl = "http://192.168.1.201:7265/Players";
 
-    private PlayerStatus userPlayer = new PlayerStatus();
-    private List<PlayerStatus> onlinePlayers = new List<PlayerStatus>();
-    
-    public void PushUserPlayer(string userId) {
-        // GET response for opc players to spawn players
-        var httpRequest = NewRequest(apiUrl + "/User?userId=" + userId, RequestType.GET);
-        
-        //Execute asynchronous request
-        StartCoroutine(Init_PushUserPlayer(httpRequest));
-    }
-
-    public PlayerStatus PullUserPlayer(string userId) 
+    public PlayerStatus PullUserPlayer(string userId)
     {
-        // GET response for opc players to spawn players
-        var httpRequest = NewRequest(apiUrl + "/User?userId=" + userId, RequestType.GET);
+        // GET request for user player to spawn
+        UnityWebRequest pullUserRequest = CreateRequest(apiUrl + "/User?userId=" + userId, RequestType.GET);
 
-        //Execute asynchronous request
-        StartCoroutine(Init_PullUserPlayer(httpRequest));
-
-        // onlinePlayers = JsonUtility.FromJson<List<PlayerStatus>>(httpRequest.downloadHandler.text);
-        return userPlayer;
+        // Execute request asynchronously
+        StartCoroutine(SendRequestAsync(pullUserRequest));
+        
+        // Pass result to PlayerStatus
+        string result = pullUserRequest.downloadHandler.text;
+        return JsonUtility.FromJson<PlayerStatus>(result);
     }
     
     public List<PlayerStatus> PullOnlinePlayers(string userId) 
     {
-        // GET response for opc players to spawn players
-        var httpRequest = NewRequest(apiUrl + "/Online?userId=" + userId, RequestType.GET);
+        // GET request for opc players to spawn players
+        UnityWebRequest pullUsersRequest = CreateRequest(apiUrl + "/Online?userId=" + userId, RequestType.GET);
 
-        //Execute asynchronous request
-        StartCoroutine(Init_PullOnlinePlayers(httpRequest));
+        // Execute request asynchronously
+        StartCoroutine(SendRequestAsync(pullUsersRequest));
+        
+        //  Pass result to List<PlayerStatus>
+        string result = pullUsersRequest.downloadHandler.text;
+        return JsonToPlayerList(result);
+    }
+    
+    public bool PushUserPlayer(PlayerStatus userPlayer) {
+        // PUT request for API to update player
+        UnityWebRequest pushUserRequest = CreateRequest(apiUrl + "/User", RequestType.PUT, userPlayer);
+        
+        // Execute request asynchronously
+        StartCoroutine(SendRequestAsync(pushUserRequest));
+        
+        //  Pass result to List<PlayerStatus>
+        string result = pushUserRequest.downloadHandler.text;
 
-        // onlinePlayers = JsonUtility.FromJson<List<PlayerStatus>>(httpRequest.downloadHandler.text);
-        return onlinePlayers;
+        return bool.Parse(result);
     }
 
-    private UnityWebRequest NewRequest(string path, RequestType type, object data = null) 
+    private UnityWebRequest CreateRequest(string path, RequestType type, object data = null) 
     {
         var request = new UnityWebRequest(path, type.ToString());
 
@@ -64,60 +69,36 @@ public class ApiHandler : MonoBehaviour
 
         return request;
     }
-    private IEnumerator Init_PullUserPlayer(UnityWebRequest request)
+
+    private IEnumerator SendRequestAsync (UnityWebRequest request)
     {
         // yield to wait for the request to return
-        yield return request.SendWebRequest();
+        UnityWebRequestAsyncOperation apiResponse = request.SendWebRequest();
+        yield return apiResponse;
+    }
 
-        // after this, you will have a result
-        string result = request.downloadHandler.text;
+    private List<PlayerStatus> JsonToPlayerList(string result)
+    {
+        // reset onlinePlayers
+        var onlinePlayers = new List<PlayerStatus>();
         
-        // update user 
-        userPlayer = JsonUtility.FromJson<PlayerStatus>(result);
-    }
-    
-    private static IEnumerator Init_PushUserPlayer(UnityWebRequest request)
-    {
-        yield return request.SendWebRequest();
-    }
-    
-    private IEnumerator Init_PullOnlinePlayers(UnityWebRequest request)
-    {
-        // yield to wait for the request to return
-        yield return request.SendWebRequest();
-
-        // after this, you will have a result
-        string result = request.downloadHandler.text;
-
         try
         {
-            // reset onlinePlayers
-            onlinePlayers = new List<PlayerStatus>();
-            
-            if (result[0] == '[')
+            // format response ready for splitting 
+            result = result.Replace("[{", "").Replace("}]", "").Replace("},{", "[");
+    
+            // update onlinePlayers for each entry using JsonUtility
+            foreach (var playerSubString in result.Split('['))
             {
-                // format response ready for splitting 
-                result = result.Replace("[{", "").Replace("}]", "").Replace("},{", "[");
-        
-                // update onlinePlayers for each entry returned
-                foreach (var playerSubString in result.Split('['))
-                {
-                    onlinePlayers.Add(JsonUtility.FromJson<PlayerStatus>("{" + playerSubString + "}"));
-                }
-            }
-            else if (result[0] == '{')
-            {
-                // treat result as json
-            
-            } else {
-                // treat result as error
-                Debug.LogError("Invalid JSON response from server.");
+                onlinePlayers.Add(JsonUtility.FromJson<PlayerStatus>("{" + playerSubString + "}"));
             }
         } catch (IndexOutOfRangeException)
         {
             // treat result as error
-            Debug.LogError("Invalid JSON response from server.");
+            Debug.LogError($"'{result}' is not a valid JSON array.");
         }
+        
+        return onlinePlayers;
     }
 }
 
