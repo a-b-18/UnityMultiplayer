@@ -16,6 +16,7 @@ public class WebHandler : MonoBehaviour
     [SerializeField] private LoginHandler loginHandler;
     [SerializeField] private InstanceHandler instanceHandler;
     private string apiUrl = "http://192.168.1.201:7265/Players";
+    private bool pushUser = false;
 
     // Start is called before the first frame update
     private void Start()
@@ -26,7 +27,7 @@ public class WebHandler : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        StartCoroutine(PushUserDto(instanceHandler.GetUserInstance()));
+        if (pushUser) {StartCoroutine(PushUserDto(instanceHandler.GetUserInstance()));}
         StartCoroutine(PullOnlineDto(loginHandler.GetUser()));
     }
 
@@ -44,6 +45,7 @@ public class WebHandler : MonoBehaviour
 
         // Return response as PlayerDto
         instanceHandler.SetUserInstance(resultDto);
+        pushUser = true;
     }
 
     private IEnumerator PullOnlineDto(string userId) 

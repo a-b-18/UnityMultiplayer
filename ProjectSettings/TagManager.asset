@@ -9,6 +9,7 @@ TagManager:
   - Instance Handler
   - Web Handler
   - Login Handler
+  - User Name
   layers:
   - Default
   - TransparentFX

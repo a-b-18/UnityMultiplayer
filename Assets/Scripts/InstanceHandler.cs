@@ -19,6 +19,7 @@ public class InstanceHandler : MonoBehaviour
     // Game instances
     private PlayerInstance _userInstance = new PlayerInstance();
     private List<PlayerInstance> _onlineInstances = new List<PlayerInstance>();
+    private bool writeUser = false;
 
     private void Start()
     {
@@ -26,7 +27,7 @@ public class InstanceHandler : MonoBehaviour
 
     private void Update()
     {
-        WriteToUserDto();
+        if (writeUser) {WriteToUserDto();}
     }
 
     private void WriteToUserDto()
@@ -34,9 +35,10 @@ public class InstanceHandler : MonoBehaviour
         // _userInstance.dto.userName = _loginHandler.GetUser();
         _userInstance.dto.posX = _userInstance.gameObject.transform.localPosition.x;
         _userInstance.dto.posY = _userInstance.gameObject.transform.localPosition.y;
-        _userInstance.dto.angle = _userInstance.gameObject.transform.rotation.y;
-        _userInstance.dto.health = Convert.ToInt32(userHealthInput);
-        _userInstance.dto.score = Convert.ToInt32(userHealthInput);
+        _userInstance.dto.angle = _userInstance.gameObject.transform.rotation.z;
+        _userInstance.dto.userName = ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "UserName").transform.GetComponent<TextMeshProUGUI>().text;
+        _userInstance.dto.health = Convert.ToInt32(ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().text);
+        _userInstance.dto.score = Convert.ToInt32(ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().text);
     }
 
     public PlayerDto GetUserInstance()
@@ -56,41 +58,53 @@ public class InstanceHandler : MonoBehaviour
         
         // Instantiate user object as per dto
         _userInstance.gameObject = Instantiate(userPlayerPrefab,
+            new Vector3(x: playerDto.posX, y: playerDto.posY, z: 0), Quaternion.identity);
+        ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "UserName").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.userName);
+        ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.health.ToString());
+        ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.score.ToString());
+        writeUser = true;
+    }
+
+    public void SetOnlineInstances(List<PlayerDto> newPlayersDto)
+    {
+        // Remove old instances no longer existing
+        foreach (var playerInstance in _onlineInstances.Where(oldPlayer => newPlayersDto.Count(newPlayer => newPlayer.id == oldPlayer.dto.id) == 0))
+        {
+            RemoveOnlineInstance(playerInstance.dto);
+        }
+        
+        // Instantiate new instances added to latest Dto
+        foreach (var playerDto in newPlayersDto.Where(newPlayer => _onlineInstances.Count(oldPlayer => oldPlayer.dto.id == newPlayer.id) == 0))
+        {
+            AddOnlineInstance(playerDto);
+        }
+        
+        // Refresh instances currently existing
+        foreach (var playerInstance in _onlineInstances.Where(existingPlayer => newPlayersDto.Count(newPlayer => newPlayer.id == existingPlayer.dto.id) > 0))
+        {
+            playerInstance.dto = newPlayersDto.First(newPlayer => newPlayer.id == playerInstance.dto.id);
+        }
+        RefreshOnlineInstances();
+
+    }
+
+    private void AddOnlineInstance(PlayerDto playerDto)
+    {
+        var instantiate = Instantiate(onlinePlayerPrefab,
             new Vector3(x: playerDto.posX, y: playerDto.posY, z: 0),
             Quaternion.identity);
-        _userInstance.gameObject.transform.SetParent(GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-    }
-
-    public void SetOnlineInstances(List<PlayerDto> playersDto)
-    {
-        // Instantiate online objects as per dto
-        foreach (var playerDto in playersDto)
-        {
-            _userInstance.gameObject = Instantiate(onlinePlayerPrefab,
-                new Vector3(x: playerDto.posX, y: playerDto.posY, z: 0),
-                Quaternion.identity);
-            _userInstance.gameObject.transform.SetParent(GameObject.FindGameObjectWithTag("Game Canvas").transform, false);
-        }
-    }
-    
-    public void AddUserInstance(PlayerDto playerDto)
-    {
-
-    }
-
-    public void AddOnlineInstance(PlayerDto playerDto)
-    {
+        ChildObjectbyName(ChildObjectbyName(instantiate, "Canvas"), "UserName").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.userName);
+        ChildObjectbyName(ChildObjectbyName(instantiate, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.health.ToString());
+        ChildObjectbyName(ChildObjectbyName(instantiate, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.score.ToString());
         
+        _onlineInstances.Add(new PlayerInstance
+        {
+            gameObject = instantiate,
+            dto = playerDto
+        });
     }
     
-    public void RemoveUserInstance()
-    {
-        // Destroy game object and remove instance
-        Destroy(_userInstance.gameObject);
-        _userInstance = new PlayerInstance();
-    }
-
-    public void RemoveOnlineInstance(PlayerDto playerDto)
+    private void RemoveOnlineInstance(PlayerDto playerDto)
     {
         // Select instance with dto id
         var selectedInstance = _onlineInstances.First(instance => instance.dto.id == playerDto.id);
@@ -98,6 +112,33 @@ public class InstanceHandler : MonoBehaviour
         // Destroy game object and remove instance
         Destroy(selectedInstance.gameObject);
         _onlineInstances.Remove(selectedInstance);
+    }
+    
+    private void RefreshOnlineInstances()
+    {
+        foreach (var onlineInstance in _onlineInstances)
+        {
+            onlineInstance.gameObject.transform.localPosition.Set(onlineInstance.dto.posX,onlineInstance.dto.posY,0);
+            ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "UserName").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.userName);
+            ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.health.ToString());
+            ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.score.ToString());
+        }
+    }
+
+    private GameObject ChildObjectbyName(GameObject gameObject, string objectName)
+    {
+        for (int i = 0; i < gameObject.transform.childCount; ++i)
+        {
+            Transform currentItem = gameObject.transform.GetChild(i);
+ 
+            //Search by name
+            if (currentItem.name.Equals(objectName))
+            {
+                return currentItem.gameObject;
+            }
+        }
+        // No child object with name found
+        return new GameObject();
     }
     
     private class PlayerInstance
