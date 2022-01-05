@@ -20,6 +20,7 @@ public class InstanceHandler : MonoBehaviour
     private PlayerInstance _userInstance = new PlayerInstance();
     private List<PlayerInstance> _onlineInstances = new List<PlayerInstance>();
     private bool writeUser = false;
+    private int userSpeed = 10;
 
     private void Start()
     {
@@ -63,6 +64,17 @@ public class InstanceHandler : MonoBehaviour
         ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.health.ToString());
         ChildObjectbyName(ChildObjectbyName(_userInstance.gameObject, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().SetText(playerDto.score.ToString());
         writeUser = true;
+    }
+
+    public void MoveUserInstance(Vector3 direction)
+    {
+        direction *= userSpeed;
+        var userPosition = _userInstance.gameObject.transform.localPosition;
+        // var x = userPosition.x + direction.x;
+        // var y = userPosition.y + direction.y;
+        // userPosition.Set(x, y, 0);
+        _userInstance.gameObject.transform.localPosition = userPosition + direction;
+        Debug.Log(_userInstance.gameObject.transform.localPosition);
     }
 
     public void SetOnlineInstances(List<PlayerDto> newPlayersDto)
