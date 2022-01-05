@@ -6,7 +6,9 @@ TagManager:
   tags:
   - Game Canvas
   - User Player
-  - API Handler
+  - Instance Handler
+  - Web Handler
+  - Login Handler
   layers:
   - Default
   - TransparentFX
