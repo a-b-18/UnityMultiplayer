@@ -136,7 +136,7 @@ public class InstanceHandler : MonoBehaviour
     {
         foreach (var onlineInstance in _onlineInstances)
         {
-            onlineInstance.gameObject.transform.localPosition.Set(onlineInstance.dto.posX,onlineInstance.dto.posY,0);
+            onlineInstance.gameObject.transform.localPosition = new Vector3(onlineInstance.dto.posX,onlineInstance.dto.posY,0);
             ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "UserName").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.userName);
             ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "Health").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.health.ToString());
             ChildObjectbyName(ChildObjectbyName(onlineInstance.gameObject, "Canvas"), "Score").transform.GetComponent<TextMeshProUGUI>().SetText(onlineInstance.dto.score.ToString());
@@ -155,6 +155,7 @@ public class InstanceHandler : MonoBehaviour
                 return currentItem.gameObject;
             }
         }
+        
         // No child object with name found
         return new GameObject();
     }
