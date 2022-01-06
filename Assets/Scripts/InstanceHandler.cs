@@ -20,7 +20,7 @@ public class InstanceHandler : MonoBehaviour
     private PlayerInstance _userInstance = new PlayerInstance();
     private List<PlayerInstance> _onlineInstances = new List<PlayerInstance>();
     private bool writeUser = false;
-    private int userSpeed = 10;
+    private int userSpeed = 800;
 
     private void Start()
     {
@@ -68,13 +68,19 @@ public class InstanceHandler : MonoBehaviour
 
     public void MoveUserInstance(Vector3 direction)
     {
-        direction *= userSpeed;
+        var xMax = 1819;
+        var xMin = -450;
+        var yMax = 3919;
+        var yMin = -915;
+        
+        direction *= userSpeed * Time.deltaTime;
         var userPosition = _userInstance.gameObject.transform.localPosition;
-        // var x = userPosition.x + direction.x;
-        // var y = userPosition.y + direction.y;
-        // userPosition.Set(x, y, 0);
-        _userInstance.gameObject.transform.localPosition = userPosition + direction;
-        Debug.Log(_userInstance.gameObject.transform.localPosition);
+        var destPosition = userPosition + direction;
+        if (destPosition.x < xMax && destPosition.x > xMin && destPosition.y < yMax && destPosition.y > yMin)
+        {
+            _userInstance.gameObject.transform.localPosition = destPosition;
+        }
+        // Debug.Log(_userInstance.gameObject.transform.localPosition);
     }
 
     public void SetOnlineInstances(List<PlayerDto> newPlayersDto)

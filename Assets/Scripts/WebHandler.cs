@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -17,18 +16,20 @@ public class WebHandler : MonoBehaviour
     [SerializeField] private InstanceHandler instanceHandler;
     private string apiUrl = "http://192.168.1.201:7265/Players";
     private bool pushUser = false;
+    private string _userId;
 
     // Start is called before the first frame update
     private void Start()
     {
-        StartCoroutine(PullUserDto(loginHandler.GetUser()));
+        _userId = loginHandler.GetUser();
+        StartCoroutine(PullUserDto(_userId));
     }
 
     // Update is called once per frame
     private void Update()
     {
         if (pushUser) {StartCoroutine(PushUserDto(instanceHandler.GetUserInstance()));}
-        StartCoroutine(PullOnlineDto(loginHandler.GetUser()));
+        StartCoroutine(PullOnlineDto(_userId));
     }
 
     private IEnumerator PullUserDto(string userId)
@@ -110,7 +111,7 @@ public class WebHandler : MonoBehaviour
                 Debug.LogError(": HTTP Error: " + request.error);
                 break;
             case UnityWebRequest.Result.Success:
-                Debug.Log(":\nReceived: " + request.downloadHandler.text);
+                // Debug.Log(":\nReceived: " + request.downloadHandler.text);
                 break;
         }
     }

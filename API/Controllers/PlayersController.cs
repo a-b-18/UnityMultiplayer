@@ -44,6 +44,8 @@ public class PlayersController : ControllerBase
     public async Task<ActionResult<Boolean>> PutUserPlayer(PlayerStatus playerStatus)
     {
         var result = false;
+        
+        
         var returnStatus = _dataContext.PlayerStatuses.Update(playerStatus);
         try
         {

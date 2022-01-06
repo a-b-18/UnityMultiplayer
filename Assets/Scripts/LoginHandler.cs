@@ -3,24 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
 public class LoginHandler : MonoBehaviour
 {
-    [SerializeField] private InstanceHandler instanceHandler;
-    [SerializeField] private WebHandler webHandler;
-    [SerializeField] public string userIdInput;
-    
-    private string _userId;
+    private string _userId = "0";
+    private string _userKey = "USERNAME";
     
     // Start is called before the first frame update
     private void Start()
     {
-        SetUser(userIdInput);
+        _userId = PlayerPrefs.GetString(_userKey);
     }
     private void Update()
     {
-        SetUser(userIdInput);
     }
 
     public string GetUser()
@@ -28,9 +25,20 @@ public class LoginHandler : MonoBehaviour
         return _userId;
     }
 
-    private void SetUser(string userId)
+    public void SetUser(string userId)
     {
         _userId = userId;
+        PlayerPrefs.SetString(_userKey, userId);
+    }
+
+    public void LoadGame()
+    {
+        SceneManager.LoadScene("GameSpace01");
+    }
+    
+    public void LoadMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
     }
     
 }
